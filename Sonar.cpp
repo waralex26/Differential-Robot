@@ -20,7 +20,7 @@ void Sonar::computeDistance()
 	distance = duration / 29.0 / 2.0; // if c=340m/s
 	deltaDistance = distance - distanceOld;
 	// If the distance is lower than 0.5cm, there is certainly a problem
-	if (distance < 0.5))
+	if (distance < 0.5)
 	distance = distanceOld;
 	// The arena is only 240cm
 	else if (distance > 300)
