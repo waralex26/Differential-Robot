@@ -2,16 +2,17 @@
 #include "Encoder.h"
 #include "Motor.h"
 #include "Sonar.h"
+#include "NewPing.h"
 //#include "TimerThree.h"
 #include "Robot.h"
 
 
 Robot::Robot(int T = 50, double xPos = 0, double yPos = 0,
-	double omegaPos = 0, int base = 23, int diameter = 6)
+	double omegaPos = 0, int base = 23, int diameter = 9)
 	: sonarR(30, 31), sonarL(22, 23), sonarF(24, 25),
 	sonarFL(26, 27), sonarFR(28, 29)
 	// Default position = 0
-	// Default dimension : wheelDiemater = 6cm, wheelBase = 23
+	// Default dimension : wheelDiemater = 9cm, wheelBase = 23
 {
 	x = xPos;
 	y = yPos;
@@ -39,9 +40,8 @@ void Robot::countRobot()
 		angularSpeed = (speedRight - speedLeft)* wheelDiameter / 2 / wheelBase;
 		localisation(); // To actuate the position of the robot
 	}
-	actuateSonar();
+	//actuateSonar();
 }
-
 
 
 void Robot::goStraight(double desiredSpeed)
@@ -60,8 +60,8 @@ void Robot::localisation()
 {
 	double roundLNew = motorLeft.readEncoder();
 	double roundRNew = motorRight.readEncoder();
-	double Dl = static_cast<double>(roundLNew - roundLOld) / 2249 * 3.14159 * 6;
-	double Dr = static_cast<double>(roundRNew - roundROld) / 2249 * 3.14159 * 6;
+	double Dl = static_cast<double>(roundLNew - roundLOld) / 2249 * 3.14159 * wheelDiameter;
+	double Dr = static_cast<double>(roundRNew - roundROld) / 2249 * 3.14159 * wheelDiameter;
 	roundLOld = roundLNew;
 	roundROld = roundRNew;
 	double Dc = (Dl + Dr) / 2;
@@ -198,11 +198,31 @@ void Robot::actuateSonar()
 {
 	if (millis() > (timingSonar + tSonar))
 	{
-		sonarF.computeDistance();
-		sonarR.computeDistance();
-		sonarL.computeDistance();
-		sonarFR.computeDistance();
-		sonarFL.computeDistance();
+		if (sonarTurn == 1)
+		{
+			sonarF.computeDistance();
+			sonarTurn = 2;
+		}
+		if (sonarTurn == 2)
+		{
+			sonarR.computeDistance();
+			sonarTurn = 3;
+		}
+		if (sonarTurn == 3)
+		{
+			sonarL.computeDistance();
+			sonarTurn = 4;
+		}
+		if (sonarTurn == 4)
+		{
+			sonarFR.computeDistance();
+			sonarTurn = 5;
+		}
+		if (sonarTurn == 5)
+		{
+			sonarFL.computeDistance();
+			sonarTurn = 1;
+		}
 		timingSonar = millis();
 		newSonar = true;
 	}
@@ -222,32 +242,42 @@ void Robot::printSonar()
 	Serial.println(sonarFR.getDistance());
 }
 
-void Robot::followWallLeft(double desiredDistance, double vBase = 160.0)
+void Robot::followWallRight(double desiredDistance, double vBase = 160.0)
 {
 	motorLeft.setMode(0);
 	motorRight.setMode(0);
-	double FL = 0.6;
-	double L = 1.0 - FL;
-
-	desiredDistance = L * desiredDistance + FL * desiredDistance / cos(3.1415 / 4);
 
 	double kp = 2.0;
 	double ki = 0.0;
 	double kd = 0.0;
 
 	double vLim = 80.0;
+	if (millis() > (timingSonar + tSonar))
+	{
+		newSonar = true;
+		timingSonar = millis();
+	}
 	if (newSonar == true)
 	{
-		double distanceLWall = sonarL.getDistance();
-		double distanceFLWall = sonarFL.getDistance();
+		int distanceLWall = newSonarR.ping_cm();
+		int distanceFLWall = newSonarFR.ping_cm();
 		Serial.print(distanceLWall);
 		Serial.print(" ");
 		Serial.print(distanceFLWall);
 		Serial.print(" ");
-		double distanceWall = FL * distanceFLWall + L * distanceLWall;
+		if (abs(distanceLWall - distanceFLWall) > desiredDistance)
+		{
+			if (distanceLWall < distanceFLWall)
+				distanceFLWall = distanceLWall;
+			else
+				distanceLWall = distanceFLWall;
+		}
+		double distanceWall =min(distanceFLWall, distanceLWall);
 		Serial.print(distanceWall);
 		Serial.print(" ");
 		double error = desiredDistance - distanceWall;
+		//Serial.print(error);
+		//Serial.print(" ");
 		double vPid = kp * error + (ki!=0)*vPidOld + ki * errorOld + kd * (error - errorOld);
 		Serial.print(vPid);
 		Serial.print(" ");
@@ -260,18 +290,56 @@ void Robot::followWallLeft(double desiredDistance, double vBase = 160.0)
 		{
 			vPid = -vLim;
 			error = (vPid - vPidOld + ki * errorOld - kd * (error - errorOld)) / kp;
-			//Serial.print(error);
-			//Serial.print(" ");
 		}
 		Serial.println(vPid);
 		vPidOld = vPid;
 		errorOld = error;
 
-		double vLeftWheel = vBase + vPid;
-		double vRightWheel = vBase - vPid;
+		double vLeftWheel = vBase - vPid;
+		double vRightWheel = vBase + vPid;
 		motorLeft.setVoltage(static_cast<int>(vLeftWheel),1);
 		motorRight.setVoltage(static_cast<int>(vRightWheel),1);
 		newSonar = false;
 	}
 	
+}
+
+
+void Robot::followWallLeftNewPing(double desiredDistance, int actualDistance,
+	double vBase = 100.0)
+{
+	motorLeft.setMode(0);
+	motorRight.setMode(0);
+
+	double kp = 2.0;
+	double ki = 0;
+	double kd = 0;
+
+	double vLim = 60.0;
+
+
+	double error = desiredDistance - actualDistance;
+	Serial.print(error);
+	Serial.print(" ");
+	double vPid = kp * error + (ki != 0)*vPidOld + ki * errorOld + kd * (error - errorOld);
+	Serial.print(vPid);
+	Serial.print(" ");
+	if (vPid > vLim)
+	{
+		vPid = vLim;
+		error = (vPid - vPidOld - ki * errorOld - kd * (error - errorOld)) / kp;
+	}
+	else if (vPid < -vLim)
+	{
+		vPid = -vLim;
+		error = (vPid - vPidOld + ki * errorOld - kd * (error - errorOld)) / kp;
+	}
+	Serial.println(vPid);
+	vPidOld = vPid;
+	errorOld = error;
+
+	double vLeftWheel = vBase + vPid;
+	double vRightWheel = vBase - vPid;
+	motorLeft.setVoltage(static_cast<int>(vLeftWheel), 1);
+	motorRight.setVoltage(static_cast<int>(vRightWheel), 1);
 }
