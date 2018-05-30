@@ -1,5 +1,5 @@
-#ifndef CYLINDER_RECUPERATION
-#define CYLINDER_RECUPERATION
+#ifndef CYLINDER_RECUPERATION_H
+#define CYLINDER_RECUPERATION_H
 
 #include "Servo.h"
 #include "Arduino.h"
