@@ -34,7 +34,8 @@ public:
 	void motorStop();
 	void controllerPid(double desiredSpeed);
 	void setSpeed(double desiredSpeed);
-	void setVoltage(double v, int desiredDirection = 1);
+	void setVoltage(double v, int desiredDirection);
+	void setVoltage(double v);
 	void setMode(int desiredMode) { mode = desiredMode;}
 	void increase(bool value) { isIncreased = value; }
 };

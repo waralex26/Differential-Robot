@@ -11,6 +11,12 @@ Motor::Motor(int whichMotor, int encoderPin1, int encoderPin2, long T = 50) :
 	stopped = true;
 	tSample = T;
 	isIncreased = true;
+	pinMode(13, OUTPUT);
+	pinMode(12, OUTPUT);
+	pinMode(3, OUTPUT);
+	pinMode(11, OUTPUT);
+	pinMode(9, OUTPUT);
+	pinMode(8, OUTPUT);
 }
 
 bool Motor::countMotor()
@@ -49,13 +55,18 @@ bool Motor::countMotor()
 		if (millis() > (timingMotor + tSample))
 			// To set the sampling time
 		{
+			//Serial.println(tSample);
 			// the PID will set the new voltage and the new direction
 			controllerPid(motorSpeed);
 			timingMotor = millis();
 		}
 		// If the PID didn't set a new voltage, the old one is sent
 	}
-	motorRun(static_cast<int>(voltage), motorDirection); 
+	//Serial.println(voltage);
+	if (voltage != voltageOld)
+	{
+		motorRun(static_cast<int>(voltage), motorDirection);
+	}
 
 
 	return isCount;
@@ -136,10 +147,16 @@ void Motor::controllerPid(double desiredSpeed)
 	{
 		int maxVoltage = 255;
 		int minVoltage = 30;
-		int triggerVoltage = 80;
+		int triggerVoltage = 100;
+		/*double kp = 0.07;
+		double ki = 0.025;
+		double kd = 0.08;*/
+
 		double kp = 0.07;
 		double ki = 0.025;
 		double kd = 0.08;
+
+
 		double error = motorDirection*(desiredSpeed - getSpeed());
 		voltage = (kp*error) + voltageOld + ki*errorOld + (kd*(error - errorOld));
 		errorOld = error;
@@ -171,6 +188,7 @@ void Motor::controllerPid(double desiredSpeed)
 
 void Motor::setSpeed(double desiredSpeed)
 {
+	mode = 1;
 	if (desiredSpeed >= 0)
 		motorDirection = 1;
 
@@ -180,8 +198,17 @@ void Motor::setSpeed(double desiredSpeed)
 	motorSpeed = desiredSpeed;
 }
 
-void Motor::setVoltage(double v, int desiredDirection = 1)
+void Motor::setVoltage(double v, int desiredDirection)
 {
+	mode = 0;
+	voltageOld = voltage;
 	voltage = v;
 	motorDirection = desiredDirection;
+}
+
+void Motor::setVoltage(double v)
+{
+	mode = 0;
+	if (v < 0) setVoltage(-v, -1);
+	else setVoltage(v, 1);
 }
