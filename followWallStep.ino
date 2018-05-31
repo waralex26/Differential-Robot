@@ -138,10 +138,12 @@ void control(double desiredAngle = 0.0)
   // If the robot has moved, will compute
   // a value for its angle
   if (abs(deltaX) >= 0.001)
+  {
     omega = atan(-deltaA/deltaX);
 
-  // Add the computed value to the buffer
-  omegaBuffer.pushFilter(omega);
+    // Add the computed value to the buffer
+    omegaBuffer.pushFilter(omega);
+  }
 
   // When the buffer is full, actuate the angle of the robot
   // based on an average on all the measurements. 
