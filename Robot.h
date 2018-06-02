@@ -5,6 +5,14 @@
 #include "Motor.h"
 #include "CylinderRecuperation.h"
 #include "NewPing.h"
+#include "Arduino.h"
+
+
+#define STRAIGHT 1
+#define TURN 2
+#define SWEEP 3
+#define STOPPED 4
+#define GO_BASE 5
 
 #define SONAR_NUM 3
 class Robot {
@@ -37,8 +45,9 @@ class Robot {
 	int sweepState = 1;
 
 public:
-	Robot(int T = 50, double xPos = 0, double yPos = 0,
-		double omegaPos = 0, int base = 23, int diameter = 9);
+	Robot(int T = 50, int *statePtr = NULL, double xPos = 0,
+		double yPos = 0, double omegaPos = 0, int base = 23,
+		int diameter = 9);
 	void countRobot();
 	void goStraight(double desiredSpeed);
 	void stop();
@@ -47,7 +56,9 @@ public:
 	double getX() { return x; }
 	double getY() { return y; }
 	double getOmega() { return omega; }
-	void setOmega(double angle) { omega = angle; }
+	void resetOmega() { omega = 0.0; }
+	void resetOmega(double angle) { omega = angle; }
+	void setOmega(double angle); 
 	double getDForward() { return dForward; }
 	bool goTo(double xDesired, double yDesired);
 	bool getAngle(double omegaDesired);
@@ -64,6 +75,7 @@ public:
 	bool sweep();
 	void initialize() { mechanism.initialize(5, 6); }
 	void interrupted();
+	void empty();
 };
 
 #endif

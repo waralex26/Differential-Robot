@@ -64,17 +64,9 @@ void CylinderRecuperation::empty()
 	//Serial.println(m_isReached);
 	if (!m_isReached)
 	{
+		*m_statePtr = 5;
 		m_isReached = goToBase();
 		//Serial.println(m_isReached);
-	}
-	else
-	{
-		Serial.println(m_isReached);
-		m_servoEmpty.write(m_openDoor);
-		m_timingEmpty = millis();
-		m_isFull = false;
-		m_numberOfBlack = 0;
-		m_isReached = false;
 	}
 }
 
@@ -82,4 +74,14 @@ bool CylinderRecuperation::goToBase()
 {
 	bool isReached = true;
 	return isReached;
+}
+
+void CylinderRecuperation::openDoor()
+{
+	//Serial.println(m_isReached);
+	m_servoEmpty.write(m_openDoor);
+	m_timingEmpty = millis();
+	m_isFull = false;
+	m_numberOfBlack = 0;
+	m_isReached = false;
 }

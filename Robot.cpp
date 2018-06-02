@@ -8,8 +8,9 @@
 
 
 
-Robot::Robot(int T = 50, double xPos = 0, double yPos = 0,
-	double omegaPos = 0, int base = 23, int diameter = 9)
+Robot::Robot(int T = 50, int *statePtr = NULL, double xPos = 0,
+	double yPos = 0, double omegaPos = 0, int base = 23,
+	int diameter = 9)
 	// Default position = 0
 	// Default dimension : wheelDiemater = 9cm, wheelBase = 23
 {
@@ -24,6 +25,7 @@ Robot::Robot(int T = 50, double xPos = 0, double yPos = 0,
 	motorLeft.setSamplingTime(tSample);
 	motorRight.setSamplingTime(tSample);
 	speedOld = 0;
+	mechanism.setStatePtr(statePtr);
 }
 
 
@@ -382,13 +384,19 @@ void Robot::setDeltaV(const float &deltaV)
 	motorRight.setVoltage(90.0 - deltaV);
 }
 
+void Robot::setOmega(double angle)
+{
+	float factor = 0.25;
+	omega = omega * factor + (1-factor) * angle;
+}
+
 
 //////    Turn 90 degrees on the right     ///////
 bool Robot::turnRight90(double omegaInit)
 {
-	if ((omegaInit - omega) < 0.97*(3.141592/2))
+	if ((omegaInit - omega) < 1.05*(3.141592/2))
 	{
-		motorLeft.setVoltage(100, 1);
+		motorLeft.setVoltage(130, 1);
 		motorRight.setVoltage(0, -1);
 		return false;
 	}
@@ -411,7 +419,7 @@ bool Robot::turnTo(double omegaInit, double deltaOmega)
 		direction = 1;
 	if (abs(omega - omegaInit) < 0.92*abs(deltaOmega))
 	{
-		motorLeft.setVoltage(100, direction);
+		motorLeft.setVoltage(130, direction);
 		motorRight.setVoltage(0, 1);
 		return false;
 	}
@@ -458,4 +466,9 @@ void Robot::interrupted()
 {
 	CylinderRecuperation::s_isInterrupted = true;
 	mechanism.interrupted();
+}
+
+void Robot::empty()
+{
+	mechanism.openDoor();
 }

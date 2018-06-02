@@ -1,6 +1,7 @@
 #ifndef CYLINDER_RECUPERATION_H
 #define CYLINDER_RECUPERATION_H
 
+
 #include "Servo.h"
 #include "Arduino.h"
 
@@ -22,18 +23,23 @@ private:
 	bool m_isReached = false;
 	bool m_isBlack;
 	bool m_first = true;
+	int *m_statePtr; 
 public:
-	CylinderRecuperation(int servoSortPin = 5, int interruptPin = 2, int colorPin = 42)
-		:m_interruptPin(interruptPin), m_colorPin(colorPin)
+	CylinderRecuperation(int servoSortPin = 5, int interruptPin = 2,
+		int colorPin = 42, int *statePtr = NULL)
+		:m_interruptPin(interruptPin), m_colorPin(colorPin),
+		m_statePtr(statePtr)
 	{
 		//initialize(servoSortPin);
 	}
+	void setStatePtr(int *statePtr) { m_statePtr = statePtr; }
 	static bool s_isInterrupted;
 	void interrupted();
 	void initialize(int servoSortPin, int servoEmptyPin);
 	void loop();
 	void empty();
 	bool goToBase();
+	void openDoor();
 };
 
 
