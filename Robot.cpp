@@ -380,8 +380,8 @@ void Robot::newFollowWallLeft(double actualDistance,
 
 void Robot::setDeltaV(const float &deltaV)
 {
-	motorLeft.setVoltage(100.0 + deltaV);
-	motorRight.setVoltage(90.0 - deltaV);
+	motorLeft.setVoltage(100.0*1.1 + deltaV);
+	motorRight.setVoltage(90.0*1.1 - deltaV);
 }
 
 void Robot::setOmega(double angle)
@@ -394,9 +394,9 @@ void Robot::setOmega(double angle)
 //////    Turn 90 degrees on the right     ///////
 bool Robot::turnRight90(double omegaInit)
 {
-	if ((omegaInit - omega) < 1.05*(3.141592/2))
+	if ((omegaInit - omega) < 1.02*(3.141592/2))
 	{
-		motorLeft.setVoltage(130, 1);
+		motorLeft.setVoltage(150, 1);
 		motorRight.setVoltage(0, -1);
 		return false;
 	}
@@ -419,7 +419,7 @@ bool Robot::turnTo(double omegaInit, double deltaOmega)
 		direction = 1;
 	if (abs(omega - omegaInit) < 0.92*abs(deltaOmega))
 	{
-		motorLeft.setVoltage(130, direction);
+		motorLeft.setVoltage(150, direction);
 		motorRight.setVoltage(0, 1);
 		return false;
 	}

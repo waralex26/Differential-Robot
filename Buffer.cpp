@@ -38,9 +38,34 @@ void Buffer::pushFilter(double value)
 		m_buffer[0] = value;
 }
 
+
+void Buffer::pushFilter2(double value)
+{
+	if (!m_first)
+
+	{
+		double valueOut = m_buffer[m_length - 1];
+		for (int count = m_length - 1; count > 0; --count)
+		{
+			m_buffer[count] = m_buffer[count - 1];
+		}
+		if (m_numberOfElement < m_length)
+		{
+			++m_numberOfElement;
+			m_sum += value;
+		}
+		else
+		{
+			m_sum += value;
+			m_sum -= valueOut;
+		}
+		m_buffer[0] = m_sum / m_numberOfElement;
+	}
+	else m_first = false;
+}
 double Buffer::average()
 {
-	int limit = 4;
+	int limit = 10;
 	double dummy = 0;
 	if (m_length < 5)
 		limit = m_length;
@@ -63,6 +88,7 @@ void Buffer::reset()
 		m_buffer[count] = 0;
 	}
 	m_numberOfElement = 0;
+	m_first = true;
 }
 
 double &Buffer::operator[](int index)
