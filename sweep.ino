@@ -50,6 +50,7 @@ void setup() {
 bool followWall(double limit = 0.0, double desiredAngle = 0.0);
 void control(double desiredAngle = 0.0);
 
+int count = 0;
 
 void resetAngle()
 {
@@ -63,6 +64,7 @@ double distanceFront = 0.0;
 int corner = 1;
 bool isFull = false;
 bool window = false;
+bool ascend = true;
 
 /////// MAIN LOOP ///////
 void loop() {
@@ -98,10 +100,22 @@ void loop() {
       isTurned = robot.turnRight90(0.0);
       if (isTurned)
       {
+        count = 20; // so he will actuate the angle quickly
         ++corner;
         if (corner == 4 && !window)
         {
-          stopDistance += 10.0;
+          if (ascend)
+            stopDistance += 10.0;
+          else
+            stopDistance -= 10.0;
+
+          if (stopDistance > 60.0)
+            {
+              ascend = false;
+              state = GO_BASE;
+            }
+          if (stopDistance < 31.0)
+            ascend = true;
         }
         if (corner == 5) corner = 1;
         state = STRAIGHT;
@@ -138,7 +152,7 @@ void loop() {
 
 bool sweep(double distanceFront, bool *isDone)
 {
-  Serial.println("Is sweeping");
+  //Serial.println("Is sweeping");
   actuateSonar();
   bool isReached;
   bool isPuck;
@@ -153,7 +167,6 @@ bool sweep(double distanceFront, bool *isDone)
 }
 
 double dForwardOld = 0;
-Buffer omegaBuffer(10);
 bool puck = false;
 double distanceFrontOld = 0.0;
 
@@ -190,6 +203,11 @@ bool followWall(double limit = 0.0, double desiredAngle = 0.0)
   return false;
 }
 
+
+int countLimit = 30;
+Buffer omegaBuffer(10);
+
+
 void control(double desiredAngle = 0.0)
 {
   /* Compute the smallest distance from the wall, 
@@ -208,9 +226,13 @@ void control(double desiredAngle = 0.0)
   {
     actualDistance = distance[1];
   }
-  //else actualDistance = 0.75 * distance[0] + 0.25 * 0.707107 * distance[0];
-  else actualDistance = min(distance[0], distance[1]);
-
+  else actualDistance = distance[0];
+  //else actualDistance = min(distance[0], distance[1]);
+  if (distance[0] < 5.0)
+  {
+    robot.setOmega(0.05);
+    count = 20;
+  }
   // Add the computed distance to the buffer
   distanceBuffer.push(actualDistance);
   // Use a moving average in order to have clean data
@@ -230,33 +252,33 @@ void control(double desiredAngle = 0.0)
   {
     omega = atan(-deltaA/deltaX);
 
-  // Add the computed value to the buffer
-    omegaBuffer.pushFilter(omega);
+    // Add the computed value to the buffer
+    omegaBuffer.pushFilter2(omega);
   }
-
   // When the buffer is full, actuate the angle of the robot
   // based on an average on all the measurements. 
   // Then reset the buffer
-  if (omegaBuffer.isFull())
+  if (count >= countLimit)
   {
     double actualAngle = omegaBuffer.average();
+    //omegaBuffer.reset();
     robot.setOmega(omegaBuffer[0]);
-    Serial.println(omegaBuffer[0]);
-    omegaBuffer.reset();
-    
+    count = 0;
   }
-  if ( !omegaBuffer.isFull() && distanceBuffer.isFull() )
+  else
+  {
     robot.newFollowWallLeft(-robot.getOmega(), desiredAngle, 100, 1);
+    ++count;
+  }
   /*else
     robot.newFollowWallLeft(-robot.getOmega(), 0.1, 100, 1);
     */
-  
-  /*Serial.print(' ');
+  /*
+  Serial.print(' ');
   Serial.print(robot.getOmega());
   Serial.print(' ');
-  //Serial.print(omegaBuffer[0]);
-  Serial.println();
-  */
+  Serial.print(omegaBuffer[0]);
+  Serial.println();*/
 }
 
 
@@ -296,4 +318,3 @@ void interrupt()
   robot.interrupted();
   //Serial.println("Trigger");
 }
-
