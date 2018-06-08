@@ -112,10 +112,13 @@ void loop() {
           if (stopDistance > 60.0)
             {
               ascend = false;
-              state = GO_BASE;
+              robot.setFull();
             }
           if (stopDistance < 31.0)
+          {
             ascend = true;
+            robot.setFull();
+          }
         }
         if (corner == 5) corner = 1;
         state = STRAIGHT;
@@ -318,3 +321,4 @@ void interrupt()
   robot.interrupted();
   //Serial.println("Trigger");
 }
+

@@ -40,6 +40,7 @@ public:
 	void empty();
 	bool goToBase();
 	void openDoor();
+	void setFull() { m_isFull = true; }
 };
 
 

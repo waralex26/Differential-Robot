@@ -76,6 +76,7 @@ public:
 	void initialize() { mechanism.initialize(5, 6); }
 	void interrupted();
 	void empty();
+	void setFull() { mechanism.setFull(); }
 };
 
 #endif
